@@ -7,7 +7,6 @@
 
 Golang library for easy FidoNet tools developing
 
-
 Wikipedia about FidoNet: https://en.wikipedia.org/wiki/FidoNet
 
 FTSC Documents (i.e. Technical Standards): http://ftsc.org/docs/
