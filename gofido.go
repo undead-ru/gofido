@@ -265,9 +265,6 @@ func readNextBytesUntilZero(file *os.File, len int) []byte {
 		if bytesGet[0] == 0x0D {
 			bytesGet[0] = 0x0A
 		}
-		if bytesGet[0] < 0x20 {
-			bytesGet[0] = 0x20
-		}
 		bytesRet = append(bytesRet, bytesGet[0])
 	}
 	return bytesRet
