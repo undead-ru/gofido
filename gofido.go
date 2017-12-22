@@ -142,33 +142,86 @@ func GetOutboundDir(fAddr FidoNetAddress) string {
 	return strings.ToLower(fmt.Sprintf("%04X%04X.pnt", fAddr.Network, fAddr.Node))
 }
 
-// PktWrite creates and write .pkt file
+// By now it's UNTESTED!!! PktWrite creates and write .pkt file
 func PktWrite(pktFileName string, pktHead PktHeader, pktPassword string, messages []FidoMessage) error {
+
+	buffer := new(bytes.Buffer)
+
+	err := binary.Write(buffer, binary.LittleEndian, &pktHead)
+	if err != nil {
+		return err
+	}
+
+	var message FidoMessage
+
+	for message = range messages {
+
+		err = binary.Write(buffer, binary.LittleEndian, []byte{0x02, 0x00})
+		if err != nil {
+			return err
+		}
+
+		var newMsgHeader pktMsgHeader
+		newMsgHeader.OrigNode = message.FromAddr.Node
+		newMsgHeader.DestNode = message.ToAddr.Node
+		newMsgHeader.OrigNet = message.FromAddr.Network
+		newMsgHeader.DestNet = message.ToAddr.Network
+		newMsgHeader.AttributeWord = message.Attributes
+		newMsgHeader.Cost = 0
+		copy(newMsgHeader.DateTime[:20], append([]byte(message.DateTime.Format(PktDateTimeLayout)), 0x00))
+
+		err = binary.Write(buffer, binary.LittleEndian, &newMsgHeader)
+		if err != nil {
+			return err
+		}
+
+		err = binary.Write(buffer, binary.LittleEndian, []byte(message.ToName))
+		if err != nil {
+			return err
+		}
+
+		err = binary.Write(buffer, binary.LittleEndian, []byte{0x00})
+		if err != nil {
+			return err
+		}
+
+		err = binary.Write(buffer, binary.LittleEndian, []byte(message.FromName))
+		if err != nil {
+			return err
+		}
+
+		err = binary.Write(buffer, binary.LittleEndian, []byte{0x00})
+		if err != nil {
+			return err
+		}
+
+		err = binary.Write(buffer, binary.LittleEndian, []byte(message.Subj))
+		if err != nil {
+			return err
+		}
+
+		err = binary.Write(buffer, binary.LittleEndian, []byte{0x00})
+		if err != nil {
+			return err
+		}
+
+		err = binary.Write(buffer, binary.LittleEndian, []byte(message.Text))
+		if err != nil {
+			return err
+		}
+
+		err = binary.Write(buffer, binary.LittleEndian, []byte{0x00})
+		if err != nil {
+			return err
+		}
+
+	}
+
 	file, err := os.OpenFile(pktFileName, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0664)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-
-	buffer := new(bytes.Buffer)
-
-	err = binary.Write(buffer, binary.LittleEndian, &pktHead)
-	if err != nil {
-		return err
-	}
-
-	err = binary.Write(buffer, binary.LittleEndian, []byte{0x02, 0x00})
-	if err != nil {
-		return err
-	}
-
-	/*	var message FidoMessage
-
-		for message = range messages {
-			var outMessages []byte
-			//outMessage []byte(message.ToName) 0x00
-
-		} */
 
 	_, err = file.Write(buffer.Bytes())
 	if err != nil {
