@@ -153,8 +153,9 @@ func PktWrite(pktFileName string, pktHead PktHeader, pktPassword string, message
 	}
 
 	var message FidoMessage
+	var z int
 
-	for message = range messages {
+	for z, message = range messages {
 
 		err = binary.Write(buffer, binary.LittleEndian, []byte{0x02, 0x00})
 		if err != nil {
@@ -227,6 +228,9 @@ func PktWrite(pktFileName string, pktHead PktHeader, pktPassword string, message
 	if err != nil {
 		return err
 	}
+
+	log.Printf("writed %d messages", z)
+	return nil
 }
 
 // PktRead returns slice of Messages from .pkt file
