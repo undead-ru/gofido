@@ -5,7 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/undead-ru/gofido)](https://goreportcard.com/report/github.com/undead-ru/gofido)
 [![GitHub license](https://img.shields.io/github/license/undead-ru/gofido.svg)](https://github.com/undead-ru/gofido/blob/master/LICENSE)
 
-Golang library for easy FidoNet tools developing
+Golang library for FidoNet tools developing
 
 Wikipedia about FidoNet: https://en.wikipedia.org/wiki/FidoNet
 
