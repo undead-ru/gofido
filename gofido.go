@@ -143,7 +143,7 @@ func GetOutboundDir(fAddr FidoNetAddress) string {
 }
 
 // By now it's UNTESTED!!! PktWrite creates and write .pkt file
-func PktWrite(pktFileName string, pktHead PktHeader, pktPassword string, messages []FidoMessage) error {
+func PktWrite(pktFileName string, pktHead PktHeader, messages []FidoMessage) error {
 
 	buffer := new(bytes.Buffer)
 
@@ -171,12 +171,15 @@ func PktWrite(pktFileName string, pktHead PktHeader, pktPassword string, message
 		newMsgHeader.Cost = 0
 		copy(newMsgHeader.DateTime[:20], append([]byte(message.DateTime.Format(PktDateTimeLayout)), 0x00))
 
+//		fmt.Println("Header:\n", newMsgHeader)
+//		fmt.Println("Datetime:\n", string(newMsgHeader.DateTime[:20]))
+
 		err = binary.Write(buffer, binary.LittleEndian, &newMsgHeader)
 		if err != nil {
 			return err
 		}
 
-		err = binary.Write(buffer, binary.LittleEndian, []byte(message.ToName))
+		err = binary.Write(buffer, binary.LittleEndian, UTF8toCP866([]byte(message.ToName)))
 		if err != nil {
 			return err
 		}
@@ -186,7 +189,7 @@ func PktWrite(pktFileName string, pktHead PktHeader, pktPassword string, message
 			return err
 		}
 
-		err = binary.Write(buffer, binary.LittleEndian, []byte(message.FromName))
+		err = binary.Write(buffer, binary.LittleEndian, UTF8toCP866([]byte(message.FromName)))
 		if err != nil {
 			return err
 		}
@@ -196,7 +199,7 @@ func PktWrite(pktFileName string, pktHead PktHeader, pktPassword string, message
 			return err
 		}
 
-		err = binary.Write(buffer, binary.LittleEndian, []byte(message.Subj))
+		err = binary.Write(buffer, binary.LittleEndian, UTF8toCP866([]byte(message.Subj)))
 		if err != nil {
 			return err
 		}
@@ -206,7 +209,7 @@ func PktWrite(pktFileName string, pktHead PktHeader, pktPassword string, message
 			return err
 		}
 
-		err = binary.Write(buffer, binary.LittleEndian, []byte(message.Text))
+		err = binary.Write(buffer, binary.LittleEndian, UTF8toCP866([]byte(message.Text)))
 		if err != nil {
 			return err
 		}
@@ -218,7 +221,12 @@ func PktWrite(pktFileName string, pktHead PktHeader, pktPassword string, message
 
 	}
 
-	file, err := os.OpenFile(pktFileName, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0664)
+	err = binary.Write(buffer, binary.LittleEndian, []byte{0x00, 0x00})
+	if err != nil {
+		return err
+	}
+
+	file, err := os.OpenFile(pktFileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0664)
 	if err != nil {
 		return err
 	}
@@ -229,7 +237,7 @@ func PktWrite(pktFileName string, pktHead PktHeader, pktPassword string, message
 		return err
 	}
 
-	log.Printf("writed %d messages", z)
+	log.Printf("Writed %d messages to %s file", z, pktFileName)
 	return nil
 }
 
@@ -359,7 +367,7 @@ func readNextBytesUntilZero(file *os.File, len int) []byte {
 // CP866toUTF8 converts slice of bytes from CP866 codepage to UTF8
 func CP866toUTF8(src []byte) []byte {
 	dec := charmap.CodePage866.NewDecoder()
-	newBody := make([]byte, len(src)*2)
+	newBody := make([]byte, len(src)*3)
 	n, _, err := dec.Transform(newBody, src, false)
 	if err != nil {
 		panic(err)
@@ -376,6 +384,8 @@ func UTF8toCP866(src []byte) []byte {
 	if err != nil {
 		panic(err)
 	}
-	newBody = bytes.Replace(newBody[:n], []byte{0x8D}, []byte{0x48}, -1)
+	newBody = newBody[:n]
+	newBody = bytes.Replace(newBody, []byte{0x8D}, []byte{0x48}, -1)
+	newBody = bytes.Replace(newBody, []byte{0x0A}, []byte{0x0D}, -1)
 	return newBody
 }
